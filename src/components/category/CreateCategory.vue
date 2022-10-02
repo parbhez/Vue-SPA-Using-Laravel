@@ -33,7 +33,19 @@
           </div>
           <div class="modal-body">
             <div class="col-md-12">
-              <div v-for="(category, key) in categories" :key="key">
+              <div class="form-group">
+                  <div>
+                    <ul>
+                      <li class="text-danger" v-for="error,key in validation_error" :key="key">{{ error[0] }}</li>
+                    </ul>
+                  </div>
+                 <div>
+                  <ul>
+                    <li v-if="db_error" class="text-danger">{{ db_error }}</li>
+                  </ul>
+                 </div>
+              </div>
+              <div v-for="(category, key) in form.categories" :key="key">
                 <div class="row">
                   <div class="col-md-10">
                     <label for="name" class="form-label">Name</label><br />
@@ -50,7 +62,7 @@
                     <button
                       class="btn btn-success btn-sm"
                       @click.prevent="addRow(key)"
-                      v-show="key === categories.length - 1"
+                      v-show="key === form.categories.length - 1"
                     >
                       +
                     </button>
@@ -58,7 +70,7 @@
                     <button
                       class="btn btn-danger btn-sm"
                       @click.prevent="removeRow(key)"
-                      v-show="key || (!key && categories.length > 1)"
+                      v-show="key || (!key && form.categories.length > 1)"
                     >
                       -
                     </button>
@@ -84,38 +96,80 @@
 </template>
 
 <script>
-import axios from "axios";
+import Form from 'vform'
+import { Button, HasError, AlertError } from 'vform/src/components/bootstrap5'
 export default {
+  components: {
+    Button, HasError, AlertError
+  },
   data() {
     return {
-      categories: [
+      form: new Form({
+        categories: [
         {
           name: "",
         },
       ],
+      }),
+      validation_error: null,
+      db_error: null,
     };
   },
 
 
   methods: {
     addRow(key) {
-      this.categories.push({
+      this.form.categories.push({
         name: "",
       });
     },
     removeRow(key) {
-      this.categories.splice(key, 1);
+      this.form.categories.splice(key, 1);
     },
 
+    
+
     async save_category(){
-      await axios.post("http://localhost/vue-spa/laravel-app/api/save-category", {data:this.categories})
+      await this.form.post("http://localhost/vue-spa/laravel-app/api/save-category")
       .then( (response)=>{
-        console.log(response.data)
+        if(response.data.code !== 422 && response.data.code !== 500){
+          $('#exampleModal').hide();
+          this.resetForm();
+          this.$toast.success(response.data.msg, {
+            type: 'success'
+          });
+          console.log(response.data)
+        }else{
+          if(response.data.code === 422){
+            this.db_error = null;
+            this.validation_error = response.data.result;
+            console.log(response.data.result);
+          }else{
+            this.validation_error = null;
+            this.db_error = response.data.result;
+          }
+           
+        }
       } )
       .catch((error)=>{
         console.log(error)
+       
       })
-    }
+    },
+
+    resetForm() {
+      this.form = {
+        validation_error: null,
+        db_error: null,
+
+        categories: [
+          name = '',
+        ]
+
+      }
+      
+    },
+
   },
 };
 </script>
