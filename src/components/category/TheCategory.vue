@@ -30,6 +30,7 @@
               <CreateCategory></CreateCategory>
                <!-- /.Modal End-->
 
+              Total  =  {{ getAllCategories.length }}
 
               <div class="card-body">
                 <div class="float-left">
@@ -40,7 +41,7 @@
                     <option>Delete Pemanently</option>
                   </select>
                 </div>
-
+                
                 <div class="float-right">
                   <form>
                     <div class="input-group">
@@ -57,9 +58,8 @@
                     </div>
                   </form>
                 </div>
-
+                
                 <div class="clearfix mb-3"></div>
-
                 <div class="table-responsive">
                   <table class="table table-striped">
                     <tr>
@@ -82,7 +82,7 @@
                       <th>Category</th>
                       <th>Status</th>
                     </tr>
-                    <tr>
+                    <tr v-for="category,key in getAllCategories" :key="key">
                       <td>
                         <div class="custom-checkbox custom-control">
                           <input
@@ -97,13 +97,10 @@
                         </div>
                       </td>
 
-                      <td>
-                        <a href="#">Web Developer</a>,
-                        <a href="#">Tutorial</a>
-                      </td>
+                      <td>{{category.name}}</td>
 
                       <td>
-                        <div class="badge badge-primary">Published</div>
+                        <div class="badge badge-primary">{{ category.status == 1 ? 'Active' : 'Inactive' }}</div>
                       </td>
                     </tr>
                   </table>
@@ -146,7 +143,6 @@
 </template>
 
 <script>
-  import axios from "axios";
   import CreateCategory from './CreateCategory.vue';
   export default {
     components:{
@@ -155,24 +151,22 @@
 
     data(){
       return {
-
       }
     },
 
     mounted(){
-      this.get_category();
+      this.$store.dispatch("category/get_category");
     },
 
+    computed:{
+      getAllCategories(){
+        return this.$store.state.category.categories;
+      }
+    },
+
+
     methods:{
-      async get_category(){
-      await axios.get("http://localhost/vue-spa/laravel-app/api/category")
-      .then( (response)=>{
-        console.log(response.data)
-      } )
-      .catch((error)=>{
-        console.log(error)
-      })
-    }
+     
     }
     
   }

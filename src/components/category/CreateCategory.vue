@@ -18,7 +18,7 @@
     aria-hidden="true"
   >
     <div class="modal-dialog" role="document">
-      <form @submit.prevent="save_category">
+     <form @submit.prevent="save_category"> 
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="exampleModalLabel">Add Category</h5>
@@ -32,6 +32,7 @@
             </button>
           </div>
           <div class="modal-body">
+
             <div class="col-md-12">
               <div class="form-group">
                   <div>
@@ -45,7 +46,7 @@
                   </ul>
                  </div>
               </div>
-              <div v-for="(category, key) in form.categories" :key="key">
+              <div v-for="(category, key) in categories" :key="key">
                 <div class="row">
                   <div class="col-md-10">
                     <label for="name" class="form-label">Name</label><br />
@@ -55,14 +56,14 @@
                       class="form-control"
                       id="name"
                       placeholder="Category Name"
-                      v-model="category.name"
+                      v-model="category.category_name"
                     />
                   </div>
                   <div class="col-md-2" style="padding-top: 2.15rem !important">
                     <button
                       class="btn btn-success btn-sm"
                       @click.prevent="addRow(key)"
-                      v-show="key === form.categories.length - 1"
+                      v-show="key === categories.length - 1"
                     >
                       +
                     </button>
@@ -70,7 +71,7 @@
                     <button
                       class="btn btn-danger btn-sm"
                       @click.prevent="removeRow(key)"
-                      v-show="key || (!key && form.categories.length > 1)"
+                      v-show="key || (!key && categories.length > 1)"
                     >
                       -
                     </button>
@@ -87,7 +88,7 @@
             >
               Close
             </button>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="submit" class="btn btn-primary" @click.prevent="save_category">Submit</button>
           </div>
         </div>
       </form>
@@ -96,21 +97,20 @@
 </template>
 
 <script>
-import Form from 'vform'
+import axios from "axios";
 import { Button, HasError, AlertError } from 'vform/src/components/bootstrap5'
 export default {
   components: {
     Button, HasError, AlertError
   },
+
   data() {
     return {
-      form: new Form({
         categories: [
         {
-          name: "",
+          category_name: "",
         },
       ],
-      }),
       validation_error: null,
       db_error: null,
     };
@@ -119,26 +119,26 @@ export default {
 
   methods: {
     addRow(key) {
-      this.form.categories.push({
+      this.categories.push({
         name: "",
       });
     },
     removeRow(key) {
-      this.form.categories.splice(key, 1);
+      this.categories.splice(key, 1);
     },
 
-    
-
     async save_category(){
-      await this.form.post("http://localhost/vue-spa/laravel-app/api/save-category")
+      await axios.post("http://localhost/vue-spa/laravel-app/api/save-category", { categories: this.categories })
       .then( (response)=>{
         if(response.data.code !== 422 && response.data.code !== 500){
-          $('#exampleModal').hide();
-          this.resetForm();
+          $('#exampleModal').modal('hide');
           this.$toast.success(response.data.msg, {
             type: 'success'
           });
+          this.$store.dispatch("category/get_category");
+          this.formReset();
           console.log(response.data)
+
         }else{
           if(response.data.code === 422){
             this.db_error = null;
@@ -157,18 +157,15 @@ export default {
       })
     },
 
-    resetForm() {
-      this.form = {
-        validation_error: null,
-        db_error: null,
-
-        categories: [
-          name = '',
-        ]
-
-      }
-      
-    },
+    formReset(){
+      this.categories = [
+              {
+                category_name: ''
+              }
+            ],
+      this.validation_error = null,
+      this.db_error = null
+    }
 
   },
 };

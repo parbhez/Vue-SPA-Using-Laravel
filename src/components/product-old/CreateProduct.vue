@@ -1,4 +1,14 @@
 <template>
+    <div class="card-header">
+      <button
+        type="button"
+        class="btn btn-info float-right"
+        data-toggle="modal"
+        data-target="#addProduct"
+      >
+        Add Product
+      </button>
+    </div>
     <div
       class="modal fade"
       id="addProduct"
@@ -8,11 +18,11 @@
       aria-hidden="true"
     >
       <div class="modal-dialog" role="document">
-        <form>
+        <form @submit.prevent="save_product">
            
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="exampleModalLabel"> {{ product.title  }} </h5>
+              <h5 class="modal-title" id="exampleModalLabel">Add Category</h5>
               <button
                 type="button"
                 class="close"
@@ -25,16 +35,19 @@
             <div class="modal-body">
               <div class="col-md-12">
                 <div class="row">
+                    <AlertError :form="form" />
                     <div class="col-md-12">
                       <label for="name" class="form-label">Product Name</label>
+
+                      {{ form.product_name }}
                       <input
                         type="text"
                         class="form-control"
                         placeholder="Product Name"
-                        v-model = 'category.category_name'
+                        v-model="form.product_name"
                       />
-
- 
+                      <!-- <div v-if="form.errors.has('product_name')" v-html="form.errors.get('product_name')" class="text-danger" /> -->
+                      <HasError :form="form" field="product_name" />
                     </div>
                     
                   </div>
@@ -48,7 +61,7 @@
               >
                 Close
               </button>
-              <button type="submit" class="btn btn-primary" @click.prevent="saveProduct">Add Product</button>
+              <button type="submit" class="btn btn-primary" :disabled="form.busy">Add Product</button>
             </div>
           </div>
         </form>
@@ -57,41 +70,31 @@
   </template>
   
   <script>
-
+  import axios from "axios";
+  import Form from 'vform';
+  import { Button, HasError, AlertError } from 'vform/src/components/bootstrap5'
   export default {
-    emits :{
-      addProduct: {
-        type: Object,
-        default: ()=> {}
-      },
-    },
-    props:{
-        product:{
-          type: Object,
-          default: ()=> {}
-        },
-        category:{
-          type: Object,
-          default: ()=> {}
-        },
-
-        modalId:{
-          type: String,
-          default: ''
-        }
-      },
+    components: {
+    Button, HasError, AlertError
+  },
     data(){
         return {
-          
+            form: new Form({
+                product_name: ''
+            })
         }
     },
-
     methods:{
-      saveProduct(){
-        this.$emit('addProduct');
-      }
+        async save_product () {
+        await this.form.post('http://localhost/vue-spa/laravel-app/api/save-product')
+        .then( (response)=>{
+        console.log(response.data)
+      } )
+      .catch((error)=>{
+        console.log(error)
+      })
     }
-    
+    }
   }
   </script>
   
