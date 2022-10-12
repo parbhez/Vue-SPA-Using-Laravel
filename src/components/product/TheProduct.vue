@@ -1,5 +1,6 @@
 <template>
   <div>
+    
     <!-- Content Header (Page header) -->
     <section class="content-header">
       <div class="container-fluid">
@@ -25,7 +26,6 @@
         <div class="row mt-4">
           <div class="col-12">
             <div class="card">
-              <!-- /.Create Modal Start-->
               <div class="card-header">
                 <button
                   type="button"
@@ -36,72 +36,54 @@
                   Add Product
                 </button>
               </div>
-              <CreateProduct
-                :product="product"
-                @addProduct="addProduct()"
-                :category="category"
-                :modalId="modalId"
-              ></CreateProduct>
-              <!-- /.Create Modal End-->
-
-              {{ allProducts.length }}
+      
               <div class="card-body">
-                <div class="float-right">
-                  <form>
+                <div class="row">
+                  <div class="col-md-2">
                     <div class="input-group">
-                      <input
-                        type="text"
-                        class="form-control"
-                        placeholder="Search"
-                      />
-                      <div class="input-group-append">
-                        <button class="btn btn-primary">
-                          <i class="fas fa-search"></i>
-                        </button>
-                      </div>
+                      <strong>Search By: </strong>
                     </div>
-                  </form>
+                  </div>
+
+                  <div class="col-md-3">
+                    
+                    <div class="input-group">
+                      <select v-model="queryField" class="form-control">
+                        <option value="name">Name</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <input
+                      type="text"
+                      v-model="query"
+                      class="form-control"
+                      placeholder="Search"
+                    />
+                  </div>
                 </div>
 
+               
                 <div class="clearfix mb-3"></div>
 
                 <div class="table-responsive">
                   <table class="table table-striped">
                     <tr>
                       <th class="text-center pt-2">
-                        <div
-                          class="custom-checkbox custom-checkbox-table custom-control"
-                        >
-                          <input
-                            type="checkbox"
-                            data-checkboxes="mygroup"
-                            data-checkbox-role="dad"
-                            class="custom-control-input"
-                            id="checkbox-all"
-                          />
-                          <label for="checkbox-all" class="custom-control-label"
-                            >&nbsp;</label
-                          >
-                        </div>
+                        <input type="checkbox" />
                       </th>
+                      <th>SL</th>
                       <th>Product</th>
                       <th>Status</th>
+                      <th>Action</th>
                     </tr>
-                    <tr v-for="(product, key) in allProducts" :key="key">
-                      <td>
-                        <div class="custom-checkbox custom-control">
-                          <input
-                            type="checkbox"
-                            data-checkboxes="mygroup"
-                            class="custom-control-input"
-                            id="checkbox-2"
-                          />
-                          <label for="checkbox-2" class="custom-control-label"
-                            >&nbsp;</label
-                          >
-                        </div>
+                    <tr v-for="(product, key) in allProducts.data" :key="key">
+                      <td class="text-center pt-2">
+                        <input type="checkbox" />
                       </td>
-
+                      <td>
+                        {{ product.id }}
+                      </td>
                       <td>
                         {{ product.name }}
                       </td>
@@ -111,36 +93,44 @@
                           {{ product.status == 1 ? "Published" : "Draft" }}
                         </div>
                       </td>
+                      <td>
+                        <button
+                          class="btn btn-primary btn-sm"
+                          @click.prevent="editRow((selectedProduct = product))"
+                        >
+                          Edit</button
+                        >&nbsp;
+                        <button
+                          class="btn btn-info btn-sm"
+                          @click.prevent="editModal(product)"
+                        >
+                          Another Edit</button
+                        >&nbsp;
+                        <button
+                          class="btn btn-danger btn-sm"
+                          @click.prevent="deleteRow(product.id)"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+
+                    <tr v-if="!productLength">
+                        <td class="text-danger">Data Not Found</td>
                     </tr>
                   </table>
                 </div>
-                <div class="float-right">
-                  <nav>
-                    <ul class="pagination">
-                      <li class="page-item disabled">
-                        <a class="page-link" href="#" aria-label="Previous">
-                          <span aria-hidden="true">&laquo;</span>
-                          <span class="sr-only">Previous</span>
-                        </a>
-                      </li>
-                      <li class="page-item active">
-                        <a class="page-link" href="#">1</a>
-                      </li>
-                      <li class="page-item">
-                        <a class="page-link" href="#">2</a>
-                      </li>
-                      <li class="page-item">
-                        <a class="page-link" href="#">3</a>
-                      </li>
-                      <li class="page-item">
-                        <a class="page-link" href="#" aria-label="Next">
-                          <span aria-hidden="true">&raquo;</span>
-                          <span class="sr-only">Next</span>
-                        </a>
-                      </li>
-                    </ul>
-                  </nav>
-                </div>
+
+                <!-- <ThePagination :links="allProducts.links"></ThePagination> -->
+
+                <Pagination
+                  v-if="pagination.last_page > 1"
+                  :pagination="pagination"
+                  :offset="5"
+                  @paginate="query === '' ? get_all_product() : searchData()"
+                ></Pagination>
+
+                
               </div>
             </div>
           </div>
@@ -149,14 +139,50 @@
     </section>
     <!-- /.content -->
   </div>
+
+  <!-- /.Create Modal Start-->
+  <CreateProduct
+    :product="product"
+    :category="category"
+    :errors="errors"
+    @addProduct="addProduct()"
+  ></CreateProduct>
+  <!-- /.Create Modal End-->
+
+  <!-- /.Edit Modal Start-->
+  <EditProduct
+    :selectedProduct="selectedProduct"
+    :errors="errors"
+    @updateProduct="updateProduct"
+  ></EditProduct>
+  <!-- /.Edit Modal End-->
+
+  <!-- /.Another Edit Modal Start-->
+  <AnotherEditProduct
+    :errors="errors"
+    :anothercategory="anothercategory"
+    @anotherUpdateProduct="anotherUpdateProduct"
+  ></AnotherEditProduct>
+  <!-- /.Another Edit Modal End-->
 </template>
 
 <script>
 import axios from "axios";
 import CreateProduct from "./CreateProduct.vue";
+import EditProduct from "./EditProduct.vue";
+import AnotherEditProduct from "./AnotherEditProduct.vue";
+import ThePagination from "../common/ThePagination.vue";
+import Pagination from "../common/Pagination.vue";
+
+// axios.defaults.baseURL = 'http://localhost/vue-spa/laravel-app/api'
+
 export default {
   components: {
     CreateProduct,
+    EditProduct,
+    AnotherEditProduct,
+    Pagination,
+    ThePagination,
   },
 
   data() {
@@ -166,9 +192,25 @@ export default {
       },
       allProducts: [],
 
+      pagination: {
+        current_page: 1,
+      },
+
+      query: "",
+      queryField: "name",
+
       category: {
         category_name: "",
       },
+
+      anothercategory: {
+        name: "",
+        id: "",
+      },
+
+      selectedProduct: {},
+
+      errors: {},
     };
   },
 
@@ -176,32 +218,81 @@ export default {
     this.get_all_product();
   },
 
+  watch: {
+    query(newQ, old) {
+      if (newQ === "") {
+        this.get_all_product();
+      } else {
+        this.searchData();
+      }
+    },
+  },
+
+  computed: {
+    productLength() {
+      return this.allProducts.total;
+    },
+
+    
+  },
+
   methods: {
-    get_all_product() {
-      axios
-        .get("http://localhost/vue-spa/laravel-app/api/category")
+
+   
+    async searchData() {
+      await axios
+        .get(
+          "/search-product" +
+            "/" +
+            this.queryField +
+            "/" +
+            this.query +
+            "?page=" +
+            this.pagination.current_page
+        )
         .then((response) => {
-          console.log(response.data);
           this.allProducts = response.data;
+          this.pagination = response.data;
+          console.log(response.data);
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+        history.pushState(null, null, "?page=" + this.pagination.current_page + "&field=" + this.queryField + "&query=" + this.query);
+    },
+
+    async get_all_product() {
+      await axios
+        .get("/product?page=" + this.pagination.current_page)
+        .then((response) => {
+          //console.log(response.data);
+          this.allProducts = response.data;
+          this.pagination = response.data;
         })
         .catch((error) => {
           console.log(error);
         });
+      history.pushState(null, null, "?page=" + this.pagination.current_page);
     },
 
     addProduct() {
       axios
-        .post(
-          "http://localhost/vue-spa/laravel-app/api/store-category",
-          this.category
-        )
+        .post("/store-product", this.category)
         .then((response) => {
           $("#addProduct").modal("hide");
+          // return console.log(response.data);
+          if (response.data.success === "success") {
+            this.$toast.success(response.data.msg);
+          } else {
+            this.$toast.error(response.data.msg);
+          }
           this.get_all_product();
           this.resetForm();
-          console.log(response.data);
         })
         .catch((error) => {
+          if (error.response.status === 422) {
+            this.errors = error.response.data.errors;
+          }
           console.log(error);
         });
     },
@@ -211,6 +302,81 @@ export default {
         category_name: "",
       };
     },
+
+    async deleteRow(id) {
+      if (!window.confirm("Are You Sure ??")) {
+        return;
+      }
+      await axios
+        .get("/delete-product/" + id)
+        .then((response) => {
+          // console.warn(response.data)
+          if (response.data.success === "success") {
+            this.$toast.success(response.data.msg);
+          } else {
+            this.$toast.error(response.data.msg);
+          }
+          this.get_all_product();
+        })
+        .catch((error) => {
+          // console.log(error.response.statusText)
+          this.$toast.error(error.response.statusText);
+        });
+    },
+
+    async editRow(selectedProduct) {
+      $("#editProduct").modal("show");
+      //console.log(selectedProduct)
+    },
+
+    async updateProduct(selected_Product) {
+      await axios
+        .post("/update-product", selected_Product)
+        .then((response) => {
+          $("#editProduct").modal("hide");
+          if (response.data.success === "success") {
+            this.$toast.success(response.data.msg);
+          } else {
+            this.$toast.error(response.data.msg);
+          }
+          //console.log(response.data);
+        })
+        .catch((error) => {
+          if (error.response.status === 422) {
+            this.errors = error.response.data.errors;
+          }
+          //console.log(error);
+        });
+    },
+
+    async editModal(product) {
+      $("#anotherEditProduct").modal("show");
+      this.anothercategory.id = product.id;
+      this.anothercategory.name = product.name;
+    },
+
+    async anotherUpdateProduct(category) {
+      await axios
+        .post("/another-update-product", category)
+        .then((response) => {
+          $("#anotherEditProduct").modal("hide");
+          if (response.data.success === "success") {
+            this.$toast.success(response.data.msg);
+          } else {
+            this.$toast.error(response.data.msg);
+          }
+          this.get_all_product();
+          console.log(response.data);
+        })
+        .catch((error) => {
+          if (error.response.status === 422) {
+            this.errors = error.response.data.errors;
+          }
+          console.log(error);
+        });
+    },
+
+
   },
 };
 </script>
