@@ -116,8 +116,9 @@
                     </tr>
 
                     <tr v-if="!productLength">
-                        <td class="text-danger">Data Not Found</td>
+                        <td class="text-danger" colspan="10">Data Not Found</td>
                     </tr>
+
                   </table>
                 </div>
 
@@ -130,7 +131,7 @@
                   @paginate="query === '' ? get_all_product() : searchData()"
                 ></Pagination>
 
-                
+
               </div>
             </div>
           </div>
@@ -336,6 +337,7 @@ export default {
           $("#editProduct").modal("hide");
           if (response.data.success === "success") {
             this.$toast.success(response.data.msg);
+            this.selectedProduct = {};
           } else {
             this.$toast.error(response.data.msg);
           }
@@ -365,6 +367,7 @@ export default {
           } else {
             this.$toast.error(response.data.msg);
           }
+          this.anothercategory = {};
           this.get_all_product();
           console.log(response.data);
         })

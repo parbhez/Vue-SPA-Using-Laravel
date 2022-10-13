@@ -47,10 +47,10 @@
                  </div>
               </div>
               <div v-for="(category, key) in categories" :key="key">
+                name: {{ category.name }} , Key: {{ key }} , length: {{ categories.length-1 }} 
                 <div class="row">
                   <div class="col-md-10">
                     <label for="name" class="form-label">Name</label><br />
-                    <!-- name: {{ category.name }} , Key: {{ key }} , length: {{ categories.length-1 }} -->
                     <input
                       type="text"
                       class="form-control"
@@ -88,7 +88,7 @@
             >
               Close
             </button>
-            <button type="submit" class="btn btn-primary" @click.prevent="save_category">Submit</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
           </div>
         </div>
       </form>
@@ -98,8 +98,10 @@
 
 <script>
 import axios from "axios";
+import mixin from '../../mixin'
 import { Button, HasError, AlertError } from 'vform/src/components/bootstrap5'
 export default {
+  mixins: [mixin],
   components: {
     Button, HasError, AlertError
   },
@@ -120,7 +122,7 @@ export default {
   methods: {
     addRow(key) {
       this.categories.push({
-        name: "",
+        category_name: "",
       });
     },
     removeRow(key) {
@@ -128,30 +130,45 @@ export default {
     },
 
     async save_category(){
-      await axios.post("http://localhost/vue-spa/laravel-app/api/save-category", { categories: this.categories })
+
+      if(!this.categories[0].category_name){
+        this.$iziToast.error({
+                title: 'Opps..',
+                position: 'topRight',
+                message: "Category Field Can not be null",
+            });
+          return;
+      }
+
+      this.$eventBus.emit('loading-status', true);
+      await axios.post("/save-category", { categories: this.categories })
       .then( (response)=>{
         if(response.data.code !== 422 && response.data.code !== 500){
+          this.$eventBus.emit('loading-status', false);
           $('#exampleModal').modal('hide');
-          this.$toast.success(response.data.msg, {
-            type: 'success'
-          });
+          this.successMessage(response.data);
           this.$store.dispatch("category/get_category");
           this.formReset();
           console.log(response.data)
 
         }else{
           if(response.data.code === 422){
+            this.$eventBus.emit('loading-status', false);
             this.db_error = null;
             this.validation_error = response.data.result;
-            console.log(response.data.result);
+            this.validationError(response.data);
+            console.log(response.data);
           }else{
+            this.$eventBus.emit('loading-status', false);
             this.validation_error = null;
+            this.serverError(response.data);
             this.db_error = response.data.result;
           }
            
         }
       } )
       .catch((error)=>{
+        this.$eventBus.emit('loading-status', false);
         console.log(error)
        
       })

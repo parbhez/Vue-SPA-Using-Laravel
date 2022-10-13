@@ -161,6 +161,7 @@
     computed:{
       getAllCategories(){
         return this.$store.state.category.categories;
+        
       }
     },
 
